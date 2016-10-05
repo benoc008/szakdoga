@@ -26,6 +26,7 @@
 #endif
 
 #include "CloudUtil.hpp"
+#include "ClusteringResults.hpp"
 
 template<typename PointT>
 class CloudHelper : public CloudUtil<PointT> {
@@ -34,6 +35,13 @@ public:
     CloudHelper() : CloudUtil<PointT>() {}
 
     CloudHelper(typename pcl::PointCloud<PointT>::Ptr cloud) : CloudUtil<PointT>(cloud) {}
+
+    void addCloudsToCloud(std::vector<CloudHelper<PointT>> clouds){
+        std::cout << clouds.at(0).getCloud()->size() << std::endl;
+        for(auto cloud : clouds){
+            this->addToCloud(cloud.getCloud());
+        }
+    }
 
     std::vector<Eigen::Vector4f> findCentroidsInClusters(std::vector<CloudHelper<PointT> *> clusters) {
         std::vector<Eigen::Vector4f> ret;
@@ -112,7 +120,7 @@ public:
         this->cloud = output;
     }
 
-    typename pcl::PointCloud<PointT>::Ptr removeGround(double width = 800, double height = 350) {
+    CloudHelper<PointT> removeGround(double width = 800, double height = 350) {
         pcl::ScopeTime timer("remove ground");
         this->calculateBoundingBox();
         int rows = static_cast<int>(floor((this->boundingBox.maxY - this->boundingBox.minY) / width)) + 1;
@@ -151,7 +159,7 @@ public:
                 groundCloud->insert(groundCloud->end(), pclCloud->begin(), pclCloud->end());
             }
         }
-        return groundCloud;
+        return CloudHelper<PointT>(groundCloud);
     }
 
     pcl::ModelCoefficients::Ptr calculatePlaneWithRansac() {
@@ -181,7 +189,7 @@ public:
         return coefficients;
     }
 
-    std::vector<CloudHelper<PointT>> euclideanClustering(double clusterTolerance) {
+    ClusteringResults<PointT> euclideanClustering(double clusterTolerance, int minClusterSize, int maxClusterSize) {
         pcl::ScopeTime timer("euclidean clustering");
         typename pcl::search::KdTree<PointT>::Ptr kdTree(new pcl::search::KdTree<PointT>);
         kdTree->setInputCloud(this->cloud);
@@ -189,34 +197,46 @@ public:
         std::vector<pcl::PointIndices> clusterIndices;
         pcl::EuclideanClusterExtraction<PointT> euclideanClusterExtraction;
         euclideanClusterExtraction.setClusterTolerance(clusterTolerance);
-        euclideanClusterExtraction.setMinClusterSize(100);
-        euclideanClusterExtraction.setMaxClusterSize(5000000);
+        euclideanClusterExtraction.setMinClusterSize(minClusterSize);
+        euclideanClusterExtraction.setMaxClusterSize(maxClusterSize);
         euclideanClusterExtraction.setSearchMethod(kdTree);
         euclideanClusterExtraction.setInputCloud(this->cloud);
         euclideanClusterExtraction.extract(clusterIndices);
 
+        pcl::ExtractIndices<PointT> extract;
+        pcl::IndicesPtr allIndicesPtr(new std::vector<int>);
         std::vector<CloudHelper<PointT>> cloudObjects;
-        for (std::vector<pcl::PointIndices>::const_iterator clusterIndicesIterator = clusterIndices.begin();
-             clusterIndicesIterator != clusterIndices.end(); ++clusterIndicesIterator) {
+
+        for (std::vector<pcl::PointIndices>::const_iterator clusterIndicesIterator = clusterIndices.begin(); clusterIndicesIterator != clusterIndices.end(); ++clusterIndicesIterator) {
+            pcl::IndicesPtr indicesPtr(new std::vector<int>);
+            indicesPtr->insert(indicesPtr->end(), clusterIndicesIterator->indices.begin(), clusterIndicesIterator->indices.end());
+            allIndicesPtr->insert(allIndicesPtr->end(), clusterIndicesIterator->indices.begin(), clusterIndicesIterator->indices.end());
             typename pcl::PointCloud<PointT>::Ptr cloudCluster(new pcl::PointCloud<PointT>);
-            for (std::vector<int>::const_iterator pointIterator = clusterIndicesIterator->indices.begin();
-                 pointIterator != clusterIndicesIterator->indices.end(); ++pointIterator) {
-                cloudCluster->points.push_back(this->cloud->points[*pointIterator]);
-            }
-            cloudCluster->width = cloudCluster->points.size();
-            cloudCluster->height = 1;
-            cloudCluster->is_dense = true;
+
+            extract.setInputCloud (this->cloud);
+            extract.setIndices (indicesPtr);
+            extract.setNegative (false);
+            extract.filter (*cloudCluster);
 
             std::cout << "PointCloud representing the Cluster: " << cloudCluster->points.size() << " data points."
                       << std::endl;
             cloudObjects.push_back(CloudHelper<PointT>(cloudCluster));
         }
 
+        typename pcl::PointCloud<PointT>::Ptr outliersCluster(new pcl::PointCloud<PointT>);
+
+        extract.setInputCloud (this->cloud);
+        extract.setIndices (allIndicesPtr);
+        extract.setNegative (true);
+        extract.filter (*outliersCluster);
+
         std::cout << cloudObjects.size() << " objects extracted" << std::endl;
 
-        return cloudObjects;
-    }
+        std::vector<CloudHelper<PointT>> outliersClusters;
+        outliersClusters.push_back(CloudHelper<PointT>(outliersCluster));
 
+        return ClusteringResults<PointT>(cloudObjects, outliersClusters);
+    }
 
     void clearIfHeightDoesNotFit(float min, float max) {
         this->sortByZAsc();

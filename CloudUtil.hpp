@@ -74,6 +74,10 @@ public:
         std::cout << "File written to: " << fileName << std::endl;
     }
 
+    void addToCloud(typename pcl::PointCloud<PointT>::Ptr cloudToAdd){
+        *cloud += *cloudToAdd;
+    }
+
     typename pcl::PointCloud<PointT>::Ptr getCloud() {
         return cloud;
     }

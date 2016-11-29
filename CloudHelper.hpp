@@ -148,7 +148,7 @@ public:
             size_t cloudSize = pclCloud->size();
             if (pclCloud->at(cloudSize - 1).z - pclCloud->at(cloudSize / 10).z > height) {
                 for(auto pointInCloudInGrid = pclCloud->begin(); pointInCloudInGrid != pclCloud->end(); pointInCloudInGrid++) {
-                    if (pointInCloudInGrid->z < pclCloud->at(pclCloud->size() / 10).z + 100) { // <-- also 10 centi
+                    if (pointInCloudInGrid->z < pclCloud->at(pclCloud->size() / 10).z + 0.1) { // <-- also 10 centi
                         groundCloud->insert(groundCloud->end(), *pointInCloudInGrid);
                     } else {
                         this->cloud->insert(this->cloud->end(), pointInCloudInGrid, pclCloud->end());

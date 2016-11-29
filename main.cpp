@@ -11,6 +11,8 @@
  *  lehet-e hasznalni egyeb informaciot a feldolgozaskor (timestamp, meres helye)
  *  mi az elvart futasido (/terulet v /pontmennyiseg)
  *
+ *  outlier-eket clusterezni, aztan a bb-on beluli elemeket is outlierre tenni
+ *
  * @param inputFile
  * @param outputDir
  */
@@ -20,7 +22,7 @@ void removeGhosts(std::string inputFile, std::string outputDir);
 
 int main(int argc, char *argv[]) {
 
-    std::string inputFile = "/home/bence/ClionProjects/szakdoga/old/resources/fovam4a_bin.pcd";
+    std::string inputFile = "/home/bence/ClionProjects/szakdoga/old/resources/pcd/Astoria12z.laz.pcd";
     std::string outputDir = "/home/bence/ClionProjects/szakdoga/old/resources/output/";
 
     if (argc == 3) {
@@ -43,20 +45,21 @@ void removeGhosts(std::string inputFile, std::string outputDir){
     pcl::ScopeTime timer("whole process");
     CloudHelper<pcl::PointXYZRGB> inputCloud;
     inputCloud.readCloudFromPcd(inputFile);
-    CloudHelper<pcl::PointXYZRGB> groundCloud = inputCloud.removeGround(800.0f, 500.0f);
+    CloudHelper<pcl::PointXYZRGB> groundCloud = inputCloud.removeGround(0.8f, 0.5f);
+    groundCloud.calculateBoundingBox();
 
-    ClusteringResults<pcl::PointXYZRGB> clusteringResults = inputCloud.euclideanClustering(40, 1500, 80000000);
+    ClusteringResults<pcl::PointXYZRGB> clusteringResults = inputCloud.euclideanClustering(0.03, 1500, 80000000);
 
-    std::vector<CloudHelper<pcl::PointXYZRGB>> remainingOutliers = clusteringResults.refineOutliers(150.0, 1000, 80000000);
-    clusteringResults.filterOutliers(highThings);
+//    std::vector<CloudHelper<pcl::PointXYZRGB>> remainingOutliers = clusteringResults.refineOutliers(150.0, 1000, 80000000);
+//    clusteringResults.filterOutliers(highThings);
 
     CloudHelper<pcl::PointXYZRGB> cloudObjects = clusteringResults.getMergedCloudObjects();
     cloudObjects.addToCloud(groundCloud.getCloud());
     CloudHelper<pcl::PointXYZRGB> outliers = clusteringResults.getMergedOutliers();
-    outliers.addCloudsToCloud(remainingOutliers);
+//    outliers.addCloudsToCloud(remainingOutliers);
 
-    cloudObjects.writeCloudBinary(outputDir + "objects_fovam.pcd");
-    outliers.writeCloudBinary(outputDir + "outliers_fovam.pcd");
+    cloudObjects.writeCloudBinary(outputDir + "objects_astoria12_2.pcd");
+    outliers.writeCloudBinary(outputDir + "outliers_astoria12_2.pcd");
 }
 
 //void findGhosts(std::string inputFile, std::string outputDir) {

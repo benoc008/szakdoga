@@ -22,7 +22,7 @@ void removeGhosts(std::string inputFile, std::string outputDir);
 
 int main(int argc, char *argv[]) {
 
-    std::string inputFile = "/home/bence/ClionProjects/szakdoga/old/resources/pcd/Astoria12z.laz.pcd";
+    std::string inputFile = "/home/bence/ClionProjects/szakdoga/old/resources/down_3_13.laz";
     std::string outputDir = "/home/bence/ClionProjects/szakdoga/old/resources/output/";
 
     if (argc == 3) {
@@ -44,7 +44,8 @@ auto highThings = [](CloudHelper<pcl::PointXYZRGB> cloud){
 void removeGhosts(std::string inputFile, std::string outputDir){
     pcl::ScopeTime timer("whole process");
     CloudHelper<pcl::PointXYZRGB> inputCloud;
-    inputCloud.readCloudFromPcd(inputFile);
+//    inputCloud.readCloudFromPcd(inputFile);
+    inputCloud.readCloudFromLas(inputFile);
     CloudHelper<pcl::PointXYZRGB> groundCloud = inputCloud.removeGround(0.8f, 0.5f);
     groundCloud.calculateBoundingBox();
 
@@ -58,8 +59,8 @@ void removeGhosts(std::string inputFile, std::string outputDir){
     CloudHelper<pcl::PointXYZRGB> outliers = clusteringResults.getMergedOutliers();
 //    outliers.addCloudsToCloud(remainingOutliers);
 
-    cloudObjects.writeCloudBinary(outputDir + "objects_astoria12_2.pcd");
-    outliers.writeCloudBinary(outputDir + "outliers_astoria12_2.pcd");
+    cloudObjects.writeCloudBinary(outputDir + "objects_down_3.pcd");
+    outliers.writeCloudBinary(outputDir + "outliers_down_3.pcd");
 }
 
 //void findGhosts(std::string inputFile, std::string outputDir) {

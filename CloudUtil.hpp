@@ -7,6 +7,7 @@
 #include <pcl/visualization/pcl_visualizer.h>
 #include <pcl/common/time.h>
 #include <stdlib.h>
+#include "LasToPcdConverter.hpp"
 
 struct BoundingBox {
     float minZ = FLT_MAX, maxZ = FLT_MIN, minX = FLT_MAX, maxX = FLT_MIN, minY = FLT_MAX, maxY = FLT_MIN;
@@ -59,6 +60,14 @@ public:
         pcl::PCDReader reader;
         cloud->clear();
         reader.read(fileName, *cloud);
+        std::cout << "PointCloud has: " << cloud->points.size() << " data points." << std::endl;
+    }
+
+    void readCloudFromLas(std::string fileName){
+        LasToPcdConverter<pcl::PointCloud<PointT> > converter;
+        liblas::Header header;
+        converter.convertLasToPcd(fileName, header, *cloud);
+        offset = converter.getOffset();
         std::cout << "PointCloud has: " << cloud->points.size() << " data points." << std::endl;
     }
 
@@ -133,6 +142,7 @@ public:
 protected:
     typename pcl::PointCloud<PointT>::Ptr cloud;
     BoundingBox boundingBox;
+    Offset offset;
 };
 
 #endif //OLD_CLOUDUTIL_HPP

@@ -14,17 +14,17 @@ class Offset {
 public:
     double x, y, z;
 
-	Offset(){
-		reset();
-	}
+    Offset() {
+        reset();
+    }
 
-    void reset(){
+    void reset() {
         x = 0.0;
         y = 0.0;
         z = 0.0;
     }
 
-    bool isNulls(){
+    bool isNulls() {
         return (x == 0 && y == 0 && z == 0);
     }
 };
@@ -33,28 +33,28 @@ template<typename CloudT>
 class LasToPcdConverter {
 public:
 
-	LasToPcdConverter(){
-		_calculateOffset = false;
-	}
+    LasToPcdConverter() {
+        _calculateOffset = false;
+    }
 
-    void convertLasToPcdWithOffset(const std::string &input, liblas::Header &header, CloudT &cloud){
+    void convertLasToPcdWithOffset(const std::string &input, liblas::Header &header, CloudT &cloud) {
         _calculateOffset = _offset.isNulls();
         LAStoPCD(input, header, cloud);
     }
 
-    void convertLasToPcd(const std::string &input, liblas::Header &header, CloudT &cloud){
+    void convertLasToPcd(const std::string &input, liblas::Header &header, CloudT &cloud) {
         _offset.reset();
         _calculateOffset = true;
         LAStoPCD(input, header, cloud);
     }
 
-    void setOffset(Offset offset){
+    void setOffset(Offset offset) {
         _offset.x = offset.x;
         _offset.y = offset.y;
         _offset.z = offset.z;
     }
 
-    Offset getOffset(){
+    Offset getOffset() {
         return _offset;
     }
 
@@ -109,13 +109,34 @@ private:
 
                 typename CloudT::PointType p = cloud.points[i];
                 pcl::for_each_type<FieldList>(
-                        pcl::SetIfFieldExists<typename CloudT::PointType, float>(p, "x", static_cast<float>(q.GetX() - _offset.x)));
+                        pcl::SetIfFieldExists<typename CloudT::PointType, float>(p, "x", static_cast<float>(q.GetX() -
+                                                                                                            _offset.x)));
                 pcl::for_each_type<FieldList>(
-                        pcl::SetIfFieldExists<typename CloudT::PointType, float>(p, "y", static_cast<float>(q.GetY() - _offset.y)));
+                        pcl::SetIfFieldExists<typename CloudT::PointType, float>(p, "y", static_cast<float>(q.GetY() -
+                                                                                                            _offset.y)));
                 pcl::for_each_type<FieldList>(
-                        pcl::SetIfFieldExists<typename CloudT::PointType, float>(p, "z", static_cast<float>(q.GetZ() - _offset.z)));
+                        pcl::SetIfFieldExists<typename CloudT::PointType, float>(p, "z", static_cast<float>(q.GetZ() -
+                                                                                                            _offset.z)));
                 cloud.points[i] = p;
             }
+        }
+
+
+        //colors
+        for (size_t i = 0; i < cloud.points.size(); ++i) {
+            reader.ReadNextPoint();
+            liblas::Point const &q = reader.GetPoint();
+
+            typename CloudT::PointType p = cloud.points[i];
+
+            uint32_t rgb = (static_cast<uint32_t> (q.GetColor().GetRed()) << 16 |
+                            static_cast<uint32_t> (q.GetColor().GetGreen()) << 8 |
+                            static_cast<uint32_t> (q.GetColor().GetBlue()));
+
+            pcl::for_each_type<FieldList>(
+                    pcl::SetIfFieldExists<typename CloudT::PointType, float>(p, "rgb", rgb));
+
+            cloud.points[i] = p;
         }
 
         bool has_i = false;

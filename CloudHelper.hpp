@@ -37,7 +37,7 @@ public:
     CloudHelper(typename pcl::PointCloud<PointT>::Ptr cloud) : CloudUtil<PointT>(cloud) {}
 
     void addCloudsToCloud(std::vector<CloudHelper<PointT>> clouds){
-        std::cout << clouds.at(0).getCloud()->size() << std::endl;
+//        std::cout << clouds.at(0).getCloud()->size() << std::endl;
         for(auto cloud : clouds){
             this->addToCloud(cloud.getCloud());
         }
@@ -120,7 +120,7 @@ public:
         this->cloud = output;
     }
 
-    CloudHelper<PointT> removeGround(double width = 800, double height = 350) {
+    CloudHelper<PointT> removeGround(double width = 0.8, double height = 0.5, double scale = 1) {
         pcl::ScopeTime timer("remove ground");
         this->calculateBoundingBox();
         int rows = static_cast<int>(floor((this->boundingBox.maxY - this->boundingBox.minY) / width)) + 1;
@@ -148,7 +148,7 @@ public:
             size_t cloudSize = pclCloud->size();
             if (pclCloud->at(cloudSize - 1).z - pclCloud->at(cloudSize / 10).z > height) {
                 for(auto pointInCloudInGrid = pclCloud->begin(); pointInCloudInGrid != pclCloud->end(); pointInCloudInGrid++) {
-                    if (pointInCloudInGrid->z < pclCloud->at(pclCloud->size() / 10).z + 0.1) { // <-- also 10 centi
+                    if (pointInCloudInGrid->z < pclCloud->at(0).z + scale * 0.1) { // <-- also 10 centi
                         groundCloud->insert(groundCloud->end(), *pointInCloudInGrid);
                     } else {
                         this->cloud->insert(this->cloud->end(), pointInCloudInGrid, pclCloud->end());
@@ -218,8 +218,8 @@ public:
             extract.setNegative (false);
             extract.filter (*cloudCluster);
 
-            std::cout << "PointCloud representing the Cluster: " << cloudCluster->points.size() << " data points."
-                      << std::endl;
+//            std::cout << "PointCloud representing the Cluster: " << cloudCluster->points.size() << " data points."
+//                      << std::endl;
             cloudObjects.push_back(CloudHelper<PointT>(cloudCluster));
         }
 
@@ -230,7 +230,7 @@ public:
         extract.setNegative (true);
         extract.filter (*outliersCluster);
 
-        std::cout << cloudObjects.size() << " objects extracted" << std::endl;
+//        std::cout << cloudObjects.size() << " objects extracted" << std::endl;
 
         std::vector<CloudHelper<PointT>> outliersClusters;
         outliersClusters.push_back(CloudHelper<PointT>(outliersCluster));

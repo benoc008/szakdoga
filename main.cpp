@@ -5,7 +5,6 @@
 
 void removeGhosts(ParamBuilder& paramBuilder, std::string inputFile, std::string outputFile);
 
-
 int main(int argc, char *argv[]) {
 
     ParamBuilder paramBuilder(argc, argv);

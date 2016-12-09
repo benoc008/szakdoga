@@ -37,21 +37,10 @@ public:
         _calculateOffset = false;
     }
 
-    void convertLasToPcdWithOffset(const std::string &input, liblas::Header &header, CloudT &cloud) {
-        _calculateOffset = _offset.isNulls();
-        LAStoPCD(input, header, cloud);
-    }
-
     void convertLasToPcd(const std::string &input, liblas::Header &header, CloudT &cloud) {
         _offset.reset();
         _calculateOffset = true;
         LAStoPCD(input, header, cloud);
-    }
-
-    void setOffset(Offset offset) {
-        _offset.x = offset.x;
-        _offset.y = offset.y;
-        _offset.z = offset.z;
     }
 
     Offset getOffset() {
@@ -117,26 +106,16 @@ private:
                 pcl::for_each_type<FieldList>(
                         pcl::SetIfFieldExists<typename CloudT::PointType, float>(p, "z", static_cast<float>(q.GetZ() -
                                                                                                             _offset.z)));
+
+                uint32_t rgb = (static_cast<uint32_t> (q.GetColor().GetRed()) << 16 |
+                                static_cast<uint32_t> (q.GetColor().GetGreen()) << 8 |
+                                static_cast<uint32_t> (q.GetColor().GetBlue()));
+
+                pcl::for_each_type<FieldList>(
+                        pcl::SetIfFieldExists<typename CloudT::PointType, float>(p, "rgb", rgb));
+
                 cloud.points[i] = p;
             }
-        }
-
-
-        //colors
-        for (size_t i = 0; i < cloud.points.size(); ++i) {
-            reader.ReadNextPoint();
-            liblas::Point const &q = reader.GetPoint();
-
-            typename CloudT::PointType p = cloud.points[i];
-
-            uint32_t rgb = (static_cast<uint32_t> (q.GetColor().GetRed()) << 16 |
-                            static_cast<uint32_t> (q.GetColor().GetGreen()) << 8 |
-                            static_cast<uint32_t> (q.GetColor().GetBlue()));
-
-            pcl::for_each_type<FieldList>(
-                    pcl::SetIfFieldExists<typename CloudT::PointType, float>(p, "rgb", rgb));
-
-            cloud.points[i] = p;
         }
 
         bool has_i = false;

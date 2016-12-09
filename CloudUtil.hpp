@@ -1,6 +1,10 @@
-#ifndef OLD_CLOUDUTIL_HPP
-#define OLD_CLOUDUTIL_HPP
+#ifndef CLOUDUTIL_HPP
+#define CLOUDUTIL_HPP
 
+#include <liblas/liblas.hpp>
+
+#include <string>
+#include <fstream>  // std::ofstream
 #include <iostream>
 #include <pcl/io/pcd_io.h>
 #include <pcl/common/transforms.h>
@@ -54,6 +58,26 @@ public:
         std::cout << "File written to: " << fileName << std::endl;
     }
 
+    void writeCloudLas(std::string fileName){
+        std::ofstream ofs;
+        ofs.open(fileName, ios::out | ios::binary);
+
+        liblas::Header header;
+        header.SetScale( 0.0001, 0.0001, 0.0001 );
+
+        liblas::Writer writer(ofs, header);
+
+        for (typename pcl::PointCloud<PointT>::iterator it = cloud->begin(); it != cloud->end(); it++) {
+            liblas::Point point(&header);
+            point.SetCoordinates(it->x, it->y, it->z);
+            const liblas::Color color(it->r, it->g, it->b);
+            point.SetColor(color);
+
+            writer.WritePoint(point);
+        }
+
+    }
+
     void addToCloud(typename pcl::PointCloud<PointT>::Ptr cloudToAdd){
         *cloud += *cloudToAdd;
     }
@@ -95,4 +119,4 @@ protected:
     Offset offset;
 };
 
-#endif //OLD_CLOUDUTIL_HPP
+#endif //CLOUDUTIL_HPP

@@ -20,6 +20,6 @@ if (OPENMP_FOUND)
     set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
 endif()
 
-add_executable (old main.cpp CloudUtil.hpp CloudHelper.hpp ClusteringResults.hpp LasToPcdConverter.hpp)
+add_executable (old main.cpp CloudUtil.hpp CloudHelper.hpp ClusteringResults.hpp LasToPcdConverter.hpp ParamBuilder.hpp FileUtil.cpp FileUtil.hpp)
 target_link_libraries (old ${PCL_LIBRARIES} ${LIBLAS_LIBRARY})
 target_compile_features(old PRIVATE cxx_range_for)

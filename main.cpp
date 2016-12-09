@@ -1,102 +1,80 @@
 #include <string>
 #include "CloudHelper.hpp"
+#include "ParamBuilder.hpp"
+#include "FileUtil.hpp"
 
-/**
- * notes
- *
- * magic numberekkel nem jo dolgozni, mert inputonkent erosen elteroek a parameterek
- * mas merkator, mas lidar, eltero pontsuruseg, tavoli objektumok surusege nyilvan kisebb.
- *
- * kerdes:
- *  lehet-e hasznalni egyeb informaciot a feldolgozaskor (timestamp, meres helye)
- *  mi az elvart futasido (/terulet v /pontmennyiseg)
- *
- *  outlier-eket clusterezni, aztan a bb-on beluli elemeket is outlierre tenni
- *
- * @param inputFile
- * @param outputDir
- */
+void removeGhosts(ParamBuilder& paramBuilder, std::string inputFile, std::string outputFile);
 
-void removeGhosts(std::string inputFile, std::string outputDir, std::string outputName, double groundWidth, double groundHeight, double clusterResolution, double highResolution, double lowResolution);
 
 int main(int argc, char *argv[]) {
 
-    std::string inputFile = "/home/bence/ClionProjects/szakdoga/old/resources/pcd/Deak22.laz.pcd";
-    std::string outputDir = "/home/bence/ClionProjects/szakdoga/old/resources/output/";
-
-    if (argc == 3) {
-        inputFile = argv[1];
-        outputDir = argv[2];
+    ParamBuilder paramBuilder(argc, argv);
+    if(!paramBuilder.isValid()){
+        return 1;
     }
 
-    {
-        pcl::ScopeTime timer1("whole process");
-//        {
-//            pcl::ScopeTime timer2("astoria fast ");
-//            removeGhosts("/home/bence/ClionProjects/szakdoga/old/resources/pcd/Astoria11z.laz.pcd", outputDir, "Astoria11_fast", 0.8, 0.5, 0.03, 0.20, 0.06);
-//            removeGhosts("/home/bence/ClionProjects/szakdoga/old/resources/pcd/Astoria12z.laz.pcd", outputDir, "Astoria12_fast", 0.8, 0.5, 0.03, 0.20, 0.06);
-//            removeGhosts("/home/bence/ClionProjects/szakdoga/old/resources/pcd/Astoria21z.laz.pcd", outputDir, "Astoria21_fast", 0.8, 0.5, 0.03, 0.20, 0.06);
-//            removeGhosts("/home/bence/ClionProjects/szakdoga/old/resources/pcd/Astoria22z.laz.pcd", outputDir, "Astoria22_fast", 0.8, 0.5, 0.03, 0.20, 0.06);
-//        }
-        {
-            pcl::ScopeTime timer2("astoria slow ");
-            removeGhosts("/home/bence/ClionProjects/szakdoga/old/resources/pcd/Astoria11z.laz.pcd", outputDir, "Astoria11_slow", 0.8, 0.5, 0.02, 0.20, 0.06);
-            removeGhosts("/home/bence/ClionProjects/szakdoga/old/resources/pcd/Astoria12z.laz.pcd", outputDir, "Astoria12_slow", 0.8, 0.5, 0.02, 0.20, 0.06);
-            removeGhosts("/home/bence/ClionProjects/szakdoga/old/resources/pcd/Astoria21z.laz.pcd", outputDir, "Astoria21_slow", 0.8, 0.5, 0.02, 0.20, 0.06);
-            removeGhosts("/home/bence/ClionProjects/szakdoga/old/resources/pcd/Astoria22z.laz.pcd", outputDir, "Astoria22_slow", 0.8, 0.5, 0.02, 0.20, 0.06);
+    if(isDirectory(paramBuilder.getInputFile())){
+        std::vector<std::string> inputFiles = getFilesInDir(paramBuilder.getInputFile());
+        int counter = 1;
+        for(std::string inputFile : inputFiles){
+            std::cout << counter++ << "/" << inputFiles.size() << std::endl;
+            boost::filesystem::path inputFileBoost(inputFile);
+            removeGhosts(paramBuilder, inputFile, paramBuilder.getOutputFile() + "out_" + inputFileBoost.filename().string());
         }
-//        {
-//            pcl::ScopeTime timer2("deak fast ");
-//            removeGhosts("/home/bence/ClionProjects/szakdoga/old/resources/pcd/Deak11.laz.pcd", outputDir, "Deak11_fast", 0.8, 0.5, 0.03, 0.20, 0.06);
-//            removeGhosts("/home/bence/ClionProjects/szakdoga/old/resources/pcd/Deak12.laz.pcd", outputDir, "Deak12_fast", 0.8, 0.5, 0.03, 0.20, 0.06);
-//            removeGhosts("/home/bence/ClionProjects/szakdoga/old/resources/pcd/Deak21.laz.pcd", outputDir, "Deak21_fast", 0.8, 0.5, 0.03, 0.20, 0.06);
-//            removeGhosts("/home/bence/ClionProjects/szakdoga/old/resources/pcd/Deak22.laz.pcd", outputDir, "Deak22_fast", 0.8, 0.5, 0.03, 0.20, 0.06);
-//        }
-//        {
-//            pcl::ScopeTime timer2("deak slow ");
-//            removeGhosts("/home/bence/ClionProjects/szakdoga/old/resources/pcd/Deak11.laz.pcd", outputDir, "Deak11_slow", 0.8, 0.5, 0.021, 0.20, 0.06);
-//            removeGhosts("/home/bence/ClionProjects/szakdoga/old/resources/pcd/Deak12.laz.pcd", outputDir, "Deak12_slow", 0.8, 0.5, 0.021, 0.20, 0.06);
-//            removeGhosts("/home/bence/ClionProjects/szakdoga/old/resources/pcd/Deak21.laz.pcd", outputDir, "Deak21_slow", 0.8, 0.5, 0.021, 0.20, 0.06);
-//            removeGhosts("/home/bence/ClionProjects/szakdoga/old/resources/pcd/Deak22.laz.pcd", outputDir, "Deak22_slow", 0.8, 0.5, 0.021, 0.20, 0.06);
-//        }
-//        {
-//            pcl::ScopeTime timer2("gellert ");
-//            removeGhosts("/home/bence/ClionProjects/szakdoga/old/resources/gellert4a_bin.laz.pcd", outputDir, "gellert", 800, 500, 3, 20, 6);
-//        }
+    } else {
+        removeGhosts(paramBuilder, paramBuilder.getInputFile(), paramBuilder.getOutputFile());
     }
 
     return 0;
 }
 
-auto highThings = [](CloudHelper<pcl::PointXYZRGB> cloud){
+auto highThings = [](CloudHelper<pcl::PointXYZRGB> cloud, double minHeight){
     cloud.sortByZAsc();
-    return cloud.getCloud()->at(cloud.getCloud()->size() / 100 * 93).z - cloud.getCloud()->at(0).z < 2.5; //1.6 volt
+    return cloud.getCloud()->at(cloud.getCloud()->size() / 100 * 90).z - cloud.getCloud()->at(0).z < minHeight; //1.6 volt, astoria 2.5
 };
 
-auto lowThings = [](CloudHelper<pcl::PointXYZRGB> cloud){
+auto lowThings = [](CloudHelper<pcl::PointXYZRGB> cloud, double maxHeight){
     cloud.sortByZAsc();
-    return cloud.getCloud()->at(cloud.getCloud()->size() / 10 * 9).z - cloud.getCloud()->at(0).z > 0.6; //.6 volt
+    return cloud.getCloud()->at(cloud.getCloud()->size() / 10 * 9).z - cloud.getCloud()->at(0).z > maxHeight; //.6 volt
 };
 
-void removeGhosts(std::string inputFile, std::string outputDir, std::string outputName, double groundWidth, double groundHeight, double clusterResolution, double highResolution, double lowResolution){
-
+void removeGhosts(ParamBuilder& paramBuilder, std::string inputFile, std::string outputFile){
+    pcl::StopWatch mainWatch;
     CloudHelper<pcl::PointXYZRGB> inputCloud;
-//    inputCloud.readCloudFromLas(inputFile);
-    inputCloud.readCloudFromPcd(inputFile);
+    boost::filesystem::path inputFileBoost(outputFile);
+    if(inputFileBoost.extension().compare(".las") == 0 || inputFileBoost.extension().compare(".laz") == 0 ){
+        inputCloud.readCloudFromLas(inputFile);
+    } else {
+        inputCloud.readCloudFromPcd(inputFile);
+    }
 
-    CloudHelper<pcl::PointXYZRGB> groundCloud = inputCloud.removeGround(groundWidth, groundHeight);
+    pcl::StopWatch removeGroundWatch;
+    CloudHelper<pcl::PointXYZRGB> groundCloud = inputCloud.removeGround(paramBuilder.getGroundWidth(), paramBuilder.getGroundHeight(), paramBuilder.getGroundHeight() / 5.0);
+    if(paramBuilder.isDebug()){
+        std::cout << "Talaj eltávolítása: " << removeGroundWatch.getTime() << "ms." << std::endl;
+    }
 
     groundCloud.calculateBoundingBox();
 
-    ClusteringResults<pcl::PointXYZRGB> clusteringResults = inputCloud.euclideanClustering(clusterResolution, 1500, 80000000);
+    pcl::StopWatch euclideanClusteringWatch;
+    ClusteringResults<pcl::PointXYZRGB> clusteringResults = inputCloud.euclideanClustering(paramBuilder.getClusterResolution(), 1500, 80000000);
+    if(paramBuilder.isDebug()){
+        std::cout << "Kezdeti csoportosítás: " << euclideanClusteringWatch.getTime() << "ms." << std::endl;
+    }
 
-    pcl::ScopeTime timer1("high ");
-    std::vector<CloudHelper<pcl::PointXYZRGB>> remainingOutliersHigh = clusteringResults.refineOutliers(highResolution, 500, 80000000);
-    clusteringResults.filterOutliers(highThings);
+    pcl::StopWatch filterHighWatch;
+    std::vector<CloudHelper<pcl::PointXYZRGB>> remainingOutliersHigh = clusteringResults.refineOutliers(paramBuilder.getHighResolution(), 1500, 80000000);
+    clusteringResults.filterOutliers(highThings, paramBuilder.getMinHeight());
+    if(paramBuilder.isDebug()){
+        std::cout << "Magas objektumok szűrése: " << filterHighWatch.getTime() << "ms." << std::endl;
+    }
 
-    pcl::ScopeTime timer2("low ");
-    std::vector<CloudHelper<pcl::PointXYZRGB>> remainingOutliersLow = clusteringResults.refineOutliers(lowResolution, 500, 80000000);
-    clusteringResults.filterOutliers(lowThings);
+    pcl::StopWatch filterLowWatch;
+    std::vector<CloudHelper<pcl::PointXYZRGB>> remainingOutliersLow = clusteringResults.refineOutliers(paramBuilder.getLowResolution(), 500, 80000000);
+    clusteringResults.filterOutliers(lowThings, paramBuilder.getMaxHeight());
+    if(paramBuilder.isDebug()){
+        std::cout << "Alacsony objektumok szűrése: " << filterLowWatch.getTime() << "ms." << std::endl;
+    }
 
     CloudHelper<pcl::PointXYZRGB> cloudObjects = clusteringResults.getMergedCloudObjects();
     cloudObjects.addToCloud(groundCloud.getCloud());
@@ -105,6 +83,13 @@ void removeGhosts(std::string inputFile, std::string outputDir, std::string outp
     outliers.addCloudsToCloud(remainingOutliersLow);
     outliers.addCloudsToCloud(remainingOutliersHigh);
 
-    cloudObjects.writeCloudBinary(outputDir + "objects_" + outputName + ".pcd");
-    outliers.writeCloudBinary(outputDir + "outliers_" + outputName + ".pcd");
+
+    cloudObjects.writeCloudBinary(outputFile);
+    boost::filesystem::path outputFileBoost(outputFile);
+    if(paramBuilder.isGhosts()){
+        std::string filename = outputFileBoost.filename().string();
+        char separator = boost::filesystem::path::preferred_separator;
+        outliers.writeCloudBinary(outputFileBoost.remove_filename().string() + separator + "szellem_" + filename);
+    }
+    std::cout << "Szellemek eltávolítása: " << mainWatch.getTime() << "ms." << std::endl;
 }

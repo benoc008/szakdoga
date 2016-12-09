@@ -13,36 +13,39 @@ public:
     std::vector<CloudHelper<PointT> > cloudObjects;
     std::vector<CloudHelper<PointT> > outliersCluster;
 
-    ClusteringResults(std::vector<CloudHelper<PointT> > cloudObjects, std::vector<CloudHelper<PointT> > outliersCluster) :
-            cloudObjects{std::move(cloudObjects)}, outliersCluster{std::move(outliersCluster)} { }
+    ClusteringResults(std::vector<CloudHelper<PointT> > cloudObjects, std::vector<CloudHelper<PointT> > outliersCluster)
+            :
+            cloudObjects{std::move(cloudObjects)}, outliersCluster{std::move(outliersCluster)} {}
 
-    CloudHelper<PointT> getMergedCloudObjects(){
+    CloudHelper<PointT> getMergedCloudObjects() {
         return mergeCloudHelperVector(cloudObjects);
     }
 
-    CloudHelper<PointT> getMergedOutliers(){
+    CloudHelper<PointT> getMergedOutliers() {
         return mergeCloudHelperVector(outliersCluster);
     }
 
-    void filterOutliers(std::function<bool(CloudHelper<PointT>)> filterFunction){
+    void filterOutliers(std::function<bool(CloudHelper<PointT>, double)> filterFunction, double param) {
 
         auto cloudIterator = std::begin(outliersCluster);
 
         while (cloudIterator != std::end(outliersCluster)) {
-            if (!filterFunction(*cloudIterator)){
+            if (!filterFunction(*cloudIterator, param)) {
                 cloudObjects.push_back(*cloudIterator);
                 cloudIterator = outliersCluster.erase(cloudIterator);
-            } else{
+            } else {
                 ++cloudIterator;
             }
         }
 
     }
 
-    std::vector<CloudHelper<PointT>> refineOutliers(double clusterTolerance, int minClusterSize, int maxClusterSize){
+    std::vector<CloudHelper<PointT>> refineOutliers(double clusterTolerance, int minClusterSize, int maxClusterSize) {
         CloudHelper<PointT> mergedOutliers = getMergedOutliers();
-        std::cout << "merged outliers size: " << mergedOutliers.getCloud()->size() << std::endl;
-        ClusteringResults<PointT> clusteringResults =mergedOutliers.euclideanClustering(clusterTolerance, minClusterSize, maxClusterSize);
+//        std::cout << "merged outliers size: " << mergedOutliers.getCloud()->size() << std::endl;
+        ClusteringResults<PointT> clusteringResults = mergedOutliers.euclideanClustering(clusterTolerance,
+                                                                                         minClusterSize,
+                                                                                         maxClusterSize);
         outliersCluster = clusteringResults.cloudObjects;
         return clusteringResults.outliersCluster;
     }
@@ -50,11 +53,11 @@ public:
 
 private:
 
-    CloudHelper<PointT> mergeCloudHelperVector(std::vector<CloudHelper<PointT>> cloudHelperVector){
+    CloudHelper<PointT> mergeCloudHelperVector(std::vector<CloudHelper<PointT>> cloudHelperVector) {
 
         CloudHelper<PointT> merged;
 
-        for(auto cloudHelper : cloudHelperVector){
+        for (auto cloudHelper : cloudHelperVector) {
             merged.addToCloud(cloudHelper.getCloud());
         }
 
